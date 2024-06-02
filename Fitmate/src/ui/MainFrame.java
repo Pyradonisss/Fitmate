@@ -1,12 +1,12 @@
 package ui;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class MainFrame extends JFrame {
     public MainFrame() {
         setTitle("FitMate");
-        setSize(800, 600);
-
+        setSize(1400, 800);
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Calorie Counter", new CalorieCounterPanel());

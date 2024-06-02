@@ -4,8 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.List;
 
 public class CalorieCounterPanel extends JPanel {
     private JTextArea logArea;
@@ -17,12 +19,20 @@ public class CalorieCounterPanel extends JPanel {
     private Map<String, Integer> foodCalories;
     private JPanel buttonPanel;
     private JScrollPane buttonScrollPane;
+    private JComboBox<String> dateComboBox;
+    private String currentDate;
+    private static final String FILE_NAME = "calorie_data.txt";
+    private List<String> dateList;
 
     public CalorieCounterPanel() {
         setLayout(new BorderLayout());
 
         logArea = new JTextArea(10, 30);
         logArea.setEditable(false);
+        logArea.setFont(new Font("Arial", Font.PLAIN, 14));
+        logArea.setLineWrap(true);
+        logArea.setWrapStyleWord(true);
+
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
         calorieGoalField = new JTextField("2400", 5);
@@ -33,17 +43,25 @@ public class CalorieCounterPanel extends JPanel {
 
         foodCalories = new HashMap<>();
         populateFoodCalories();
+        loadFoodData();
+
+        dateList = new ArrayList<>();
+        dateComboBox = new JComboBox<>();
+        loadDateList(); // loadDateList() after dateComboBox initialization
 
         JPanel topPanel = new JPanel(new FlowLayout());
         topPanel.add(new JLabel("Calorie Goal:"));
         topPanel.add(calorieGoalField);
         topPanel.add(remainingCaloriesLabel);
+        topPanel.add(new JLabel("Select Date:"));
+        topPanel.add(dateComboBox);
 
         buttonPanel = new JPanel(new GridLayout(0, 5, 5, 5));
         updateFoodButtons();
 
         buttonScrollPane = new JScrollPane(buttonPanel);
         buttonScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        buttonScrollPane.setBorder(BorderFactory.createEmptyBorder());
 
         JPanel addFoodPanel = new JPanel(new FlowLayout());
         JTextField newFoodField = new JTextField(10);
@@ -75,6 +93,9 @@ public class CalorieCounterPanel extends JPanel {
                         updateFoodButtons();
                         newFoodField.setText("");
                         newCaloriesField.setText("");
+                        updateFoodButtons();
+                        saveData(); // Hier wird saveData() aufgerufen, wenn ein neues Essen hinzugefügt wird
+                        saveFoodData();
                     } else {
                         JOptionPane.showMessageDialog(this, "This food already exists.", "Duplicate Food", JOptionPane.ERROR_MESSAGE);
                     }
@@ -83,6 +104,24 @@ public class CalorieCounterPanel extends JPanel {
                 }
             }
         });
+
+        dateComboBox.addActionListener(e -> {
+            currentDate = (String) dateComboBox.getSelectedItem();
+            if (currentDate != null && !currentDate.isEmpty()) {
+                resetData(); // Daten zurücksetzen
+                loadDateData(); // Daten für das ausgewählte Datum laden
+            }
+        });
+
+
+
+        // Load the initial data for the current date
+        currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        if (!dateList.contains(currentDate)) {
+            dateList.add(currentDate);
+        }
+        dateComboBox.setSelectedItem(currentDate);
+        loadDateData();
     }
 
     private void populateFoodCalories() {
@@ -150,6 +189,7 @@ public class CalorieCounterPanel extends JPanel {
             buttonPanel.add(foodButton);
         }
         buttonPanel.revalidate();
+        buttonPanel.repaint();
     }
 
     private class FoodButtonListener implements ActionListener {
@@ -172,6 +212,7 @@ public class CalorieCounterPanel extends JPanel {
         updateProgressBar();
         updateRemainingCalories();
         logArea.append(food + " - " + calories + " kcal\n");
+        saveData(); // Save the data whenever a food item is added
     }
 
     private void setCalorieGoal() {
@@ -194,4 +235,162 @@ public class CalorieCounterPanel extends JPanel {
         progressBar.setValue(progress);
         progressBar.setString(progress + "%");
     }
+
+    private void saveData() {
+        try {
+            Map<String, String> dataMap = new HashMap<>();
+
+            // Read existing data and update it
+            if (new File(FILE_NAME).exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(";");
+                        if (parts.length > 1) {
+                            dataMap.put(parts[0], parts[1]);
+                        }
+                    }
+                }
+            }
+
+            // Update current date data
+            String currentDateData = dataMap.getOrDefault(currentDate, "");
+            StringBuilder sb = new StringBuilder(currentDateData);
+            for (String line : logArea.getText().split("\n")) {
+                if (!line.trim().isEmpty()) {
+                    String[] parts = line.split(" - ");
+                    if (parts.length == 2) {
+                        sb.append(parts[0]).append(":").append(parts[1].replace(" kcal", "")).append(",");
+                    }
+                }
+            }
+            if (sb.length() > 0 && sb.charAt(sb.length() - 1) == ',') {
+                sb.setLength(sb.length() - 1); // Remove the last comma
+            }
+            dataMap.put(currentDate, sb.toString());
+
+            // Write updated data back to file
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+                for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                    writer.write(entry.getKey() + ";" + entry.getValue());
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+
+
+
+    private void loadDateData() {
+        String selectedDate = (String) dateComboBox.getSelectedItem();
+        if (selectedDate == null || selectedDate.isEmpty()) {
+            return;
+        }
+        resetData();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+            String line;
+            totalCalories = 0;
+            logArea.setText("");
+
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith(selectedDate)) {
+                    String[] parts = line.split(";");
+                    if (parts.length > 1) {
+                        String[] foodEntries = parts[1].split(",");
+                        for (String entry : foodEntries) {
+                            String[] foodData = entry.split(":");
+                            if (foodData.length == 2) {
+                                String food = foodData[0];
+                                int calories = Integer.parseInt(foodData[1].replace(" kcal", "").trim());
+                                addFoodToLog(food, calories);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        } catch (IOException | NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Error loading data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        updateProgressBar();
+        updateRemainingCalories();
+    }
+
+    private void addFoodToLog(String food, int calories) {
+        totalCalories += calories;
+        logArea.append(food + " - " + calories + " kcal\n");
+    }
+
+    private void loadDateList() {
+        dateList = new ArrayList<>();
+        Date currentDate = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+
+        // Add the current date as default
+        dateList.add(dateFormat.format(currentDate));
+
+        // Add the dates for the last two weeks
+        for (int i = 1; i < 14; i++) {
+            calendar.add(Calendar.DAY_OF_YEAR, -1);
+            dateList.add(dateFormat.format(calendar.getTime()));
+        }
+
+        dateComboBox.setModel(new DefaultComboBoxModel<>(dateList.toArray(new String[0])));
+    }
+
+    private void saveFoodData() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("food_data.txt"))) {
+            for (Map.Entry<String, Integer> entry : foodCalories.entrySet()) {
+                writer.write(entry.getKey() + ";" + entry.getValue());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving food data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadFoodData() {
+        File file = new File("food_data.txt");
+        if (file.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(";");
+                    if (parts.length == 2) {
+                        String food = parts[0];
+                        int calories = Integer.parseInt(parts[1]);
+                        foodCalories.put(food, calories);
+                    }
+                }
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Error loading food data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    private void resetData() {
+        totalCalories = 0;
+        calorieGoalField.setText("2400");
+        remainingCaloriesLabel.setText("Remaining Calories: 2400");
+        progressBar.setValue(0);
+        progressBar.setString("0%");
+        logArea.setText("");
+    }
+
+
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Calorie Counter");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setContentPane(new CalorieCounterPanel());
+        frame.pack();
+        frame.setVisible(true);
+    }
 }
+
