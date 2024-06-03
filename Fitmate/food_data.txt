@@ -4,6 +4,7 @@ Kekse;502
 Paprika;31
 Apfel;95
 Haferflocken;68
+Kebab;500
 Reis;206
 Gerste;354
 Cornflakes;357

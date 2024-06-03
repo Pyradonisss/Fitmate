@@ -94,7 +94,7 @@ public class CalorieCounterPanel extends JPanel {
                         newFoodField.setText("");
                         newCaloriesField.setText("");
                         updateFoodButtons();
-                        saveData(); // Hier wird saveData() aufgerufen, wenn ein neues Essen hinzugefügt wird
+                        //saveData(); // Hier wird saveData() aufgerufen, wenn ein neues Essen hinzugefügt wird
                         saveFoodData();
                     } else {
                         JOptionPane.showMessageDialog(this, "This food already exists.", "Duplicate Food", JOptionPane.ERROR_MESSAGE);
@@ -254,8 +254,7 @@ public class CalorieCounterPanel extends JPanel {
             }
 
             // Update current date data
-            String currentDateData = dataMap.getOrDefault(currentDate, "");
-            StringBuilder sb = new StringBuilder(currentDateData);
+            StringBuilder sb = new StringBuilder();
             for (String line : logArea.getText().split("\n")) {
                 if (!line.trim().isEmpty()) {
                     String[] parts = line.split(" - ");
@@ -264,9 +263,12 @@ public class CalorieCounterPanel extends JPanel {
                     }
                 }
             }
+
+            // Entferne das letzte Komma
             if (sb.length() > 0 && sb.charAt(sb.length() - 1) == ',') {
-                sb.setLength(sb.length() - 1); // Remove the last comma
+                sb.setLength(sb.length() - 1);
             }
+
             dataMap.put(currentDate, sb.toString());
 
             // Write updated data back to file
@@ -280,6 +282,7 @@ public class CalorieCounterPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Error saving data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
 
 
@@ -320,6 +323,7 @@ public class CalorieCounterPanel extends JPanel {
         updateProgressBar();
         updateRemainingCalories();
     }
+
 
     private void addFoodToLog(String food, int calories) {
         totalCalories += calories;
