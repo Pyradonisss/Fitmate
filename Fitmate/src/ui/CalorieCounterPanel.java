@@ -8,6 +8,9 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+/*TODO: Löschen einfügen
+        Optionale Ziele einfügen
+*/
 
 public class CalorieCounterPanel extends JPanel {
     private JTextArea logArea;
@@ -113,8 +116,6 @@ public class CalorieCounterPanel extends JPanel {
             }
         });
 
-
-
         // Load the initial data for the current date
         currentDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         if (!dateList.contains(currentDate)) {
@@ -184,9 +185,14 @@ public class CalorieCounterPanel extends JPanel {
     private void updateFoodButtons() {
         buttonPanel.removeAll();
         for (String food : foodCalories.keySet()) {
+            JPanel foodPanel = new JPanel(new BorderLayout());
             JButton foodButton = new JButton(food);
-            foodButton.addActionListener(new FoodButtonListener(food, foodCalories.get(food)));
-            buttonPanel.add(foodButton);
+            JTextField amountField = new JTextField("1", 2);
+            amountField.setHorizontalAlignment(JTextField.CENTER);
+            foodButton.addActionListener(new FoodButtonListener(food, foodCalories.get(food), amountField));
+            foodPanel.add(foodButton, BorderLayout.CENTER);
+            foodPanel.add(amountField, BorderLayout.SOUTH);
+            buttonPanel.add(foodPanel);
         }
         buttonPanel.revalidate();
         buttonPanel.repaint();
@@ -195,15 +201,22 @@ public class CalorieCounterPanel extends JPanel {
     private class FoodButtonListener implements ActionListener {
         private String food;
         private int calories;
+        private JTextField amountField;
 
-        public FoodButtonListener(String food, int calories) {
+        public FoodButtonListener(String food, int calories, JTextField amountField) {
             this.food = food;
             this.calories = calories;
+            this.amountField = amountField;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            addFood(food, calories);
+            try {
+                int amount = Integer.parseInt(amountField.getText());
+                addFood(food, calories * amount);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(CalorieCounterPanel.this, "Please enter a valid number for the amount.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -283,10 +296,6 @@ public class CalorieCounterPanel extends JPanel {
         }
     }
 
-
-
-
-
     private void loadDateData() {
         String selectedDate = (String) dateComboBox.getSelectedItem();
         if (selectedDate == null || selectedDate.isEmpty()) {
@@ -323,7 +332,6 @@ public class CalorieCounterPanel extends JPanel {
         updateProgressBar();
         updateRemainingCalories();
     }
-
 
     private void addFoodToLog(String food, int calories) {
         totalCalories += calories;
@@ -378,6 +386,7 @@ public class CalorieCounterPanel extends JPanel {
             }
         }
     }
+
     private void resetData() {
         totalCalories = 0;
         calorieGoalField.setText("2400");
@@ -386,8 +395,6 @@ public class CalorieCounterPanel extends JPanel {
         progressBar.setString("0%");
         logArea.setText("");
     }
-
-
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Calorie Counter");

@@ -2,6 +2,7 @@ Zucchini;17
 Zitrone;29
 Kekse;502
 Paprika;31
+Melone;75
 Apfel;95
 Haferflocken;68
 Kebab;500
@@ -13,12 +14,15 @@ Banane;105
 Lachs;208
 Blaubeeren;57
 Schokolade;546
+Wassermelone;50
 Hirse;119
+Waffeln;150
 Käse;113
 Kokosnuss;354
 Honig;304
 Müsli;389
 Ingwer;80
+Corny Riegel;250
 Avocado;160
 Brokkoli;55
 Rote Beete;44
