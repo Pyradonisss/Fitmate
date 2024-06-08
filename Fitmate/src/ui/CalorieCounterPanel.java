@@ -2,15 +2,11 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
-/*TODO: Löschen einfügen
-        Optionale Ziele einfügen
-*/
 
 public class CalorieCounterPanel extends JPanel {
     private JTextArea logArea;
@@ -35,6 +31,24 @@ public class CalorieCounterPanel extends JPanel {
         logArea.setFont(new Font("Arial", Font.PLAIN, 14));
         logArea.setLineWrap(true);
         logArea.setWrapStyleWord(true);
+        logArea.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int start = logArea.viewToModel(e.getPoint());
+                    try {
+                        int end = logArea.getLineEndOffset(logArea.getLineOfOffset(start));
+                        String selectedText = logArea.getText(logArea.getLineStartOffset(logArea.getLineOfOffset(start)), end - logArea.getLineStartOffset(logArea.getLineOfOffset(start)));
+                        int confirm = JOptionPane.showConfirmDialog(null, "Möchten Sie diesen Eintrag löschen?\n" + selectedText, "Eintrag löschen", JOptionPane.YES_NO_OPTION);
+                        if (confirm == JOptionPane.YES_OPTION) {
+                            deleteFood(selectedText.trim());
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
 
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
@@ -394,6 +408,19 @@ public class CalorieCounterPanel extends JPanel {
         progressBar.setValue(0);
         progressBar.setString("0%");
         logArea.setText("");
+    }
+
+    private void deleteFood(String logEntry) {
+        String[] parts = logEntry.split(" - ");
+        if (parts.length == 2) {
+            String food = parts[0].trim();
+            int calories = Integer.parseInt(parts[1].replace(" kcal", "").trim());
+            totalCalories -= calories;
+            logArea.setText(logArea.getText().replace(logEntry + "\n", ""));
+            updateProgressBar();
+            updateRemainingCalories();
+            saveData();
+        }
     }
 
     public static void main(String[] args) {

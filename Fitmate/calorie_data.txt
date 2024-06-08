@@ -1,5 +1,6 @@
+2024-06-08;Melone:75,Gerste:354
 2024-05-27;Apfel:95
-2024-06-07;Corny Riegel:250,Zucchini:34,Zucchini:17,Kokosnuss:354,Pasta:131,Pasta:393,Corny Riegel:250,Waffeln:300
+2024-06-07;Zucchini:34,Zucchini:17,Kokosnuss:354,Pasta:131
 2024-06-01;Apfel:95,Paprika:31,Blaubeeren:171,Blaubeeren:57
 2024-05-22;Lachs:208Lachs:208,Apfel:95,Lachs:208,Apfel:95,Quinoa:120,Lachs:208,Apfel:95,Quinoa:120,Honig:304,
 2024-05-30;Cornflakes:357,Schokolade:546
