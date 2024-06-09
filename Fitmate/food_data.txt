@@ -1,6 +1,7 @@
 Zucchini;17
 Zitrone;29
 Kekse;502
+Nudeln;75
 Paprika;31
 Melone;75
 Apfel;95

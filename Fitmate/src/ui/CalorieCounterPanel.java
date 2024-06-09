@@ -83,12 +83,15 @@ public class CalorieCounterPanel extends JPanel {
         JPanel addFoodPanel = new JPanel(new FlowLayout());
         JTextField newFoodField = new JTextField(10);
         JTextField newCaloriesField = new JTextField(5);
+        JTextField newGramsField = new JTextField(5);
         JButton addFoodButton = new JButton("Add Food");
 
         addFoodPanel.add(new JLabel("Food:"));
         addFoodPanel.add(newFoodField);
-        addFoodPanel.add(new JLabel("Calories:"));
+        addFoodPanel.add(new JLabel("Calories per 100g:"));
         addFoodPanel.add(newCaloriesField);
+        addFoodPanel.add(new JLabel("Grams:"));
+        addFoodPanel.add(newGramsField);
         addFoodPanel.add(addFoodButton);
 
         add(topPanel, BorderLayout.NORTH);
@@ -102,22 +105,24 @@ public class CalorieCounterPanel extends JPanel {
         addFoodButton.addActionListener(e -> {
             String newFood = newFoodField.getText().trim();
             String newCaloriesStr = newCaloriesField.getText().trim();
-            if (!newFood.isEmpty() && !newCaloriesStr.isEmpty()) {
+            String newGramsStr = newGramsField.getText().trim();
+            if (!newFood.isEmpty() && !newCaloriesStr.isEmpty() && !newGramsStr.isEmpty()) {
                 try {
                     int newCalories = Integer.parseInt(newCaloriesStr);
+                    int newGrams = Integer.parseInt(newGramsStr);
                     if (!foodCalories.containsKey(newFood)) {
                         foodCalories.put(newFood, newCalories);
                         updateFoodButtons();
+                        addFood(newFood, (newCalories * newGrams) / 100);
                         newFoodField.setText("");
                         newCaloriesField.setText("");
-                        updateFoodButtons();
-                        //saveData(); // Hier wird saveData() aufgerufen, wenn ein neues Essen hinzugefügt wird
+                        newGramsField.setText("");
                         saveFoodData();
                     } else {
                         JOptionPane.showMessageDialog(this, "This food already exists.", "Duplicate Food", JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Please enter a valid number for calories.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Please enter a valid number for calories and grams.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -201,11 +206,18 @@ public class CalorieCounterPanel extends JPanel {
         for (String food : foodCalories.keySet()) {
             JPanel foodPanel = new JPanel(new BorderLayout());
             JButton foodButton = new JButton(food);
-            JTextField amountField = new JTextField("1", 2);
+            JTextField amountField = new JTextField("0", 2);
+            JTextField gramsField = new JTextField("0", 2);
             amountField.setHorizontalAlignment(JTextField.CENTER);
-            foodButton.addActionListener(new FoodButtonListener(food, foodCalories.get(food), amountField));
-            foodPanel.add(foodButton, BorderLayout.CENTER);
-            foodPanel.add(amountField, BorderLayout.SOUTH);
+            gramsField.setHorizontalAlignment(JTextField.CENTER);
+            foodButton.addActionListener(new FoodButtonListener(food, foodCalories.get(food), amountField, gramsField));
+            JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            inputPanel.add(amountField);
+            inputPanel.add(new JLabel(" x "));
+            inputPanel.add(gramsField);
+            inputPanel.add(new JLabel("g"));
+            foodPanel.add(foodButton, BorderLayout.NORTH);
+            foodPanel.add(inputPanel, BorderLayout.CENTER);
             buttonPanel.add(foodPanel);
         }
         buttonPanel.revalidate();
@@ -216,20 +228,23 @@ public class CalorieCounterPanel extends JPanel {
         private String food;
         private int calories;
         private JTextField amountField;
+        private JTextField gramsField;
 
-        public FoodButtonListener(String food, int calories, JTextField amountField) {
+        public FoodButtonListener(String food, int calories, JTextField amountField, JTextField gramsField) {
             this.food = food;
             this.calories = calories;
             this.amountField = amountField;
+            this.gramsField = gramsField;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
             try {
                 int amount = Integer.parseInt(amountField.getText());
-                addFood(food, calories * amount);
+                int grams = Integer.parseInt(gramsField.getText());
+                addFood(food, (calories * amount * grams) / 100);
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(CalorieCounterPanel.this, "Please enter a valid number for the amount.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(CalorieCounterPanel.this, "Please enter valid numbers for amount and grams.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
